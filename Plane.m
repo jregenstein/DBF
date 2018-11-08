@@ -13,17 +13,14 @@ classdef Plane
         thrust %in newtons
         fuse_CD %really the drag of everything that isn't the wing, right now this includes stores but that should change soon
         fuse_area %reference area of the fuselage in m^2
-        alpha %angle of attack
         IAS %in m/s, the indicated airspeed of the aircraft
-        wing_cl
-        wing_cd
     end
     methods
-        function s = get_cruise_speed(obj)% gets the cruise speed in m/s, and configures the aircraft for cruise
+        function s = get_cruise_speed(obj)% returns the cruise speed in m/s and the alpha for which level flight is achieved at this speed
             TIMESTEP = 10; %SECONDS
             last_s = -10;
             close_enough = 0.1; %the difference between the previous and current speed at which we will consider the solution converged
-            alpha_gain = -0.5; %the factor we multiply excess lift by in order to vary alpha
+            %for each alpha within some reasonable range:
             while abs(obj.IAS - last_s) > close_enough %&& abs(obj.get_lift() - (Plane.GRAVITY * obj.mass)) > close_enough
                 obj
                 last_s = obj.IAS;
@@ -33,10 +30,10 @@ classdef Plane
             end
             s = obj.IAS;
         end
-        function d = get_drag(obj) %gets drag force in newtons           
-            d = 0.5.*obj.wing_area.*(obj.IAS^2).*obj.get_wing_cd().*Plane.AIR_DENSITY;
+        function d = get_drag(obj) %gets drag force in newtons at a given alpha          
+            d = 0.5.*obj.wing_area.*(obj.IAS^2).*obj.get_wing_cd().*Plane.AIR_DENSITY; %TODO add fuse drag
         end
-        function l = get_lift(obj)%gets lift force in newtons
+        function l = get_lift(obj)%gets lift force in newtons at a given alpha
             l = 0.5.*obj.wing_area.*(obj.IAS^2).*obj.get_wing_cl().*Plane.AIR_DENSITY;
         end
         function cd = get_wing_cd(obj)%gets the Cd at the objects alpha (for the wing only)
