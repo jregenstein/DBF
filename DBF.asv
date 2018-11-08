@@ -1,0 +1,50 @@
+%find_max_L('NACA2412')
+find_max_LD('NACA2412')
+
+%[pol,foil] = xfoil('NACA2412',-5:1:25,200000,0,'oper iter 200');
+%pol.CL
+%pol.CD
+
+%constants
+AIR_DENSITY = 1.225 %kg/m^3
+
+classdef Plane
+    properties
+        weight %in kg, empty weight of the plane
+        wing_area %in m^2, might switch to wingspan and MAC later
+        airfoil %right now can only do NACA 4-digit airfoils
+        thrust %in newtons
+        fuse_CD %really the drag of everything that isn't the wing, right now this includes stores but that should change soon
+        fuse_area %reference area of the fuselage in m^2
+        alpha %angle of attack
+        IAS %in m/s, the indicated airspeed of the aircraft
+    end
+    methods
+        function d = get_drag() %gets drag force in m/s           FIX!!!! RIGHT NOW ONLY CALCULATES FUSELAGE DRAG
+            d = 0.5*fuse_area*IAS^2*fuse_CD*AIR_DENSITY;
+        end
+        function l = get_lift()
+            l = 1;
+        end
+    end
+end
+        
+%helper funcitons
+           
+function L = find_max_L(airfoil)
+    [pol,foil] = xfoil(airfoil,[0:1:30],200000,0,'oper iter 200');
+    L = max(pol.CL);
+end
+
+function LD = find_max_LD(airfoil)
+    max_LD = 0;
+    LD_temp = 0;
+    [pol,foil] = xfoil(airfoil,-5:1:25,200000,0,'oper iter 200');
+    for i = 1:1:30;
+        LD_temp = pol.CL(i) / pol.CD(i);
+        if LD_temp > max_LD
+            max_LD = LD_temp;
+        end
+    end
+    LD = max_LD;
+end

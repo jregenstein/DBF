@@ -1,0 +1,22 @@
+naca 6412
+oper
+iter
+200
+
+
+
+oper
+re 200000
+mach 0
+visc
+pacc
+
+
+alfa -45.3554
+dump xfoil_a-45.355_dump.dat
+cpwr xfoil_a-45.355_cpwr.dat
+pwrt
+xfoil_pwrt.dat
+plis
+
+quit
