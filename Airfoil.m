@@ -3,7 +3,12 @@
 %calculations over a range of alpha's in a constructor, and then store that
 %data as a lookup table, where it can interpolate for values that didn't
 %converge
+%
+%By Jacob Regenstein
 classdef Airfoil
+    properties(Constant)
+        XFOIL_ITERATIONS = 'oper iter 50'; %number of times to iterate in xfoil
+    end
     properties
         type; %type of airfoil, to start with it will just be a NACA 4-digit
              %but we will want to include the whole UIUC library of
@@ -16,7 +21,8 @@ classdef Airfoil
         %range of alphas
         function obj = Airfoil(type)
             obj.type = type;
-            obj.data = xfoil(obj.type,-5:0.5:30,200000,0,Plane.XFOIL_ITERATIONS);
+            obj.data = xfoil(obj.type,-5:0.5:30,200000,0,Airfoil.XFOIL_ITERATIONS);
+            obj.data.LD = obj.data.CL ./ obj.data.CD;
         end
         %make functions to lookup Cl and Cd as a function of alpha, nice to
         %haves would be functions that give the max Cl, max Cl/Cd, and

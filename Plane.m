@@ -1,9 +1,12 @@
+%This class simulates a plane and will calculate cruise speed, takeoff
+%distance, stall speed and the like. Unit system is kg,m,s
+%
+%By Jacob Regenstein
 
 classdef Plane
     properties(Constant)
         %constants
         AIR_DENSITY = 1.225 ;%kg/m^3
-        XFOIL_ITERATIONS = 'oper iter 200'; %number of times to iterate in xfoil
         GRAVITY = 9.81; %m/s^2
     end
     properties
@@ -13,7 +16,6 @@ classdef Plane
         thrust %in newtons
         fuse_CD %really the drag of everything that isn't the wing, right now this includes stores but that should change soon
         fuse_area %reference area of the fuselage in m^2
-        IAS %in m/s, the indicated airspeed of the aircraft
     end
     methods
         function s = get_cruise_speed(obj)% returns the cruise speed in m/s and the alpha for which level flight is achieved at this speed
@@ -30,41 +32,23 @@ classdef Plane
             end
             s = obj.IAS;
         end
-        function d = get_drag(obj) %gets drag force in newtons at a given alpha          
-            d = 0.5.*obj.wing_area.*(obj.IAS^2).*obj.get_wing_cd().*Plane.AIR_DENSITY; %TODO add fuse drag
+        function s = get_cruise_speed_at_alpha(obj,alpha)
+            %find the speed which produces lift=weight
+            s = sqrt(2*obj.mass*obj.GRAVITY / (obj.AIR_DENSITY*obj.wing_area*obj.airfoil.get_CL(alpha)));
+            %find the drag at that speed
+            drag = obj.get_drag(alpha,s);
+            %check that that drag isn't less than thrust
+            if drag > obj.thrust
+                %if it is greater than thrust we can't cruise at this speed
+                s = 0;
+            end
         end
-        function l = get_lift(obj)%gets lift force in newtons at a given alpha
-            l = 0.5.*obj.wing_area.*(obj.IAS^2).*obj.get_wing_cl().*Plane.AIR_DENSITY;
+        function d = get_drag(obj,alpha,IAS) %gets drag force in newtons at a given alpha          
+            d = 0.5*(obj.wing_area*obj.airfoil.get_CD(alpha)+obj.fuse_area*obj.fuse_CD)*(IAS^2)*Plane.AIR_DENSITY; 
         end
-        function cd = get_wing_cd(obj)%gets the Cd at the objects alpha (for the wing only)
-            [pol,foil] = xfoil(obj.airfoil,obj.alpha,200000,0,Plane.XFOIL_ITERATIONS);
-            cd = pol.CD;
-        end
-        function cl = get_wing_cl(obj)%gets the CL at the objects alpha
-            [pol,foil] = xfoil(obj.airfoil,obj.alpha,200000,0,Plane.XFOIL_ITERATIONS);
-            cl = pol.CL;
+        function l = get_lift(obj,alpha,IAS)%gets lift force in newtons at a given alpha
+            l = 0.5*obj.wing_area*obj.airfoil.get_CL(alpha)*(IAS^2)*Plane.AIR_DENSITY; 
         end
     end
 end
         
-%helper funcitons
-           
-%{
-function L = find_max_L(airfoil)
-    [pol,foil] = xfoil(airfoil,[0:1:30],200000,0,'oper iter 200');
-    L = max(pol.CL);
-end
-
-function LD = find_max_LD(airfoil)
-    max_LD = 0;
-    LD_temp = 0;
-    [pol,foil] = xfoil(airfoil,-5:1:25,200000,0,'oper iter 200');
-    for i = 1:1:30;
-        LD_temp = pol.CL(i) / pol.CD(i);
-        if LD_temp > max_LD
-            max_LD = LD_temp;
-        end
-    end
-    LD = max_LD;
-end
-%}
