@@ -18,6 +18,23 @@ classdef Plane
         fuse_area %reference area of the fuselage in m^2
     end
     methods
+        %gives the takeoff distance in meters. for now assuming AoA = 0
+        %until rotation
+        function d = get_takeoff_distance(obj)
+            %calculate stall speed in m/s
+            Vs = sqrt(2*obj.mass*obj.GRAVITY / (obj.AIR_DENSITY*obj.wing_area*obj.airfoil.get_CL_max()));
+            %start with 0 indicated airspeed (assuming IAT=TAS for now),
+            %also in m/s
+            IAS = 0;
+            d = 0; %takeoff distance, in meters
+            timestep = 0.1; %in seconds
+            while IAS < Vs
+                net_force = obj.thrust - obj.get_drag(0,IAS);
+                IAS = IAS + (net_force/obj.mass)*timestep;
+                d = d + IAS*timestep;
+            end
+        end
+        
         %returns the max cruise speed of the aircraft
         function max = get_cruise_speed(obj)
             %this variable will keep track of the highest cruise speed we've
