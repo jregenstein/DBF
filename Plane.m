@@ -18,35 +18,44 @@ classdef Plane
         fuse_area %reference area of the fuselage in m^2
     end
     methods
-        function s = get_cruise_speed(obj)% returns the cruise speed in m/s and the alpha for which level flight is achieved at this speed
-            TIMESTEP = 10; %SECONDS
-            last_s = -10;
-            close_enough = 0.1; %the difference between the previous and current speed at which we will consider the solution converged
-            %for each alpha within some reasonable range:
-            while abs(obj.IAS - last_s) > close_enough %&& abs(obj.get_lift() - (Plane.GRAVITY * obj.mass)) > close_enough
-                obj
-                last_s = obj.IAS;
-                %change the alpha to maintain 0 lift
-                obj.alpha = obj.alpha + alpha_gain * (obj.get_lift() - (Plane.GRAVITY * obj.mass));
-                obj.IAS = TIMESTEP * (obj.thrust - obj.get_drag())/obj.mass;
+        %returns the max cruise speed of the aircraft
+        function max = get_cruise_speed(obj)
+            %this variable will keep track of the highest cruise speed we've
+            %managed so far
+            max = 0;
+            for a =  Airfoil.ALPHA_RANGE
+                %find the cruise speed at this AoA
+                temp = obj.get_cruise_speed_at_alpha(a);
+                if temp > max
+                    %if it's higher than the previous max then it's the new
+                    %max
+                    max = temp;
+                end
             end
-            s = obj.IAS;
         end
+        
+        %gets the cruise speed at a given AoA (finds the speed at which
+        %lift=weight). 
         function s = get_cruise_speed_at_alpha(obj,alpha)
             %find the speed which produces lift=weight
             s = sqrt(2*obj.mass*obj.GRAVITY / (obj.AIR_DENSITY*obj.wing_area*obj.airfoil.get_CL(alpha)));
             %find the drag at that speed
             drag = obj.get_drag(alpha,s);
-            %check that that drag isn't less than thrust
+            %check that that drag is less than thrust
             if drag > obj.thrust
-                %if it is greater than thrust we can't cruise at this speed
+                %if it is greater than thrust we can't cruise at this AoA
+                %(or at least not while maintaining altitude)
                 s = 0;
             end
         end
-        function d = get_drag(obj,alpha,IAS) %gets drag force in newtons at a given alpha          
+        
+        %gets drag force in newtons at a given alpha
+        function d = get_drag(obj,alpha,IAS)           
             d = 0.5*(obj.wing_area*obj.airfoil.get_CD(alpha)+obj.fuse_area*obj.fuse_CD)*(IAS^2)*Plane.AIR_DENSITY; 
         end
-        function l = get_lift(obj,alpha,IAS)%gets lift force in newtons at a given alpha
+        
+        %gets lift force in newtons at a given alpha
+        function l = get_lift(obj,alpha,IAS)
             l = 0.5*obj.wing_area*obj.airfoil.get_CL(alpha)*(IAS^2)*Plane.AIR_DENSITY; 
         end
     end

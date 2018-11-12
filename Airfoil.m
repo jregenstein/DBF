@@ -8,6 +8,7 @@
 classdef Airfoil
     properties(Constant)
         XFOIL_ITERATIONS = 'oper iter 50'; %number of times to iterate in xfoil
+        ALPHA_RANGE = -5:0.5:20; %the range of AoA's we will test over
     end
     properties
         type; %type of airfoil, to start with it will just be a NACA 4-digit
@@ -21,18 +22,24 @@ classdef Airfoil
         %range of alphas
         function obj = Airfoil(type)
             obj.type = type;
-            obj.data = xfoil(obj.type,-5:0.5:30,200000,0,Airfoil.XFOIL_ITERATIONS);
+            obj.data = xfoil(obj.type,Airfoil.ALPHA_RANGE,200000,0,Airfoil.XFOIL_ITERATIONS);
             obj.data.LD = obj.data.CL ./ obj.data.CD;
         end
-        %make functions to lookup Cl and Cd as a function of alpha, nice to
-        %haves would be functions that give the max Cl, max Cl/Cd, and
-        %functions that give the respective alphas for both of those points
+        
+        %returns the CL at a given AoA
         function cl = get_CL(obj,alpha)
             %gets the index associated with the alpha. Could do this in one
             %line but I think it's more readable this way
             i = obj.get_index(alpha);
             cl = obj.data.CL(i);
         end
+        
+        %returns the max CL
+        function cl = get_CL_max(obj)
+            cl = max(obj.data.CL);
+        end
+        
+        %returns the CD at a given AoA
         function cd = get_CD(obj,alpha)
             i = obj.get_index(alpha);
             cd = obj.data.CD(i);
