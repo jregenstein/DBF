@@ -3,11 +3,12 @@
 %
 %By Jacob Regenstein
 
-classdef Plane
+classdef Plane < handle %this apparently allows methods to assign property values?
     properties(Constant)
         %constants
         AIR_DENSITY = 1.225 ;%kg/m^3
         GRAVITY = 9.81; %m/s^2
+        TAKEOFF_DISTANCE_DESIRED = 3.3; %meters
     end
     properties
         mass %in kg, empty weight of the plane
@@ -18,6 +19,24 @@ classdef Plane
         fuse_area %reference area of the fuselage in m^2
     end
     methods
+        %sizes the wing for the takeoff distance
+        function s = size_wing(obj)
+            %gain to set how quickly the function will converge on the wing
+            %size
+            gain = 0.1;
+            %once it's this close to the takeoff distance we'll consider
+            %the solution converged
+            close_enough = 0.005;
+            td = obj.get_takeoff_distance(); %takeoff distance in meters
+            while abs(td - Plane.TAKEOFF_DISTANCE_DESIRED) > close_enough
+                %make the wing bigger if the takeoff roll is too long or
+                %smaller if it's too short
+                obj.wing_area = obj.wing_area - gain*(Plane.TAKEOFF_DISTANCE_DESIRED - td)
+                %recalculate the takeoff distance
+                td = obj.get_takeoff_distance()
+            end 
+            s = obj.wing_area
+        end
         %gives the takeoff distance in meters. for now assuming AoA = 0
         %until rotation
         function d = get_takeoff_distance(obj)
@@ -27,9 +46,10 @@ classdef Plane
             %also in m/s
             IAS = 0;
             d = 0; %takeoff distance, in meters
-            timestep = 0.1; %in seconds
+            timestep = 0.001; %in seconds, 0.1 is too high
             while IAS < Vs
                 net_force = obj.thrust - obj.get_drag(0,IAS);
+                %TODO: include rolling resistance
                 IAS = IAS + (net_force/obj.mass)*timestep;
                 d = d + IAS*timestep;
             end
