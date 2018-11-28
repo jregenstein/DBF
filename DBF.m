@@ -9,3 +9,4 @@ plane.fuse_area = 0.1;
 
 plane.size_wing();
 
+plane.get_cruise_speed()
